@@ -1,3 +1,11 @@
+###
+ * jQuery.validation.js
+ * Author: Yusuke Hirao [http://www.yusukehirao.com]
+ * Version: 0.1.0.0 RC
+ * Github: https://github.com/YusukeHirao/jQuery.validation.js
+ * Licensed under the MIT License
+ * Require: jQuery v@1.8.0
+###
 do (w = @, $ = @jQuery) ->
 	'use strict'
 
@@ -91,7 +99,7 @@ do (w = @, $ = @jQuery) ->
 	# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- # Class #
 	class VString extends String
 		# ----- 使用上の注意 ----- #
-		# 1. lengthプロパティの性質だけは継承できない。
+		# 1. lengthプロパティの性質だけは継承できない。lengthを参照する場合はgetLengthメソッドを使う。
 		# 2. replaceメソッドを拡張
 		# ----- ----- ----- ----- ----- # Private Method
 		_rIncluded = (chars) ->
@@ -354,7 +362,7 @@ do (w = @, $ = @jQuery) ->
 				res = res.toNarrowJapnese()
 			res
 		toWide: ->
-			res = @replace(' ', '\u3000') # 半角スペース -> 全角スペース
+			res = @replace(/\s/g, '\u3000') # 半角スペース -> 全角スペース
 			hash = {}
 			hash[ALPHANUMERIC_CHARS_WITH_SIGN] = +65248
 			@
@@ -693,8 +701,8 @@ do (w = @, $ = @jQuery) ->
 					year = values.year?.toNumber()
 					month = values.month?.toNumber()
 					date = values.date?.toNumber()
-					isAgeCheck = !!options?.age
-					ageLimits = if isAgeCheck then options.age[0] else Infinity
+					ageLimits = options.age?[0] or options.year?[0] or Infinity
+					isAgeCheck = isFinite ageLimits
 					$age = $ @age
 					$elapsedYear = $ @elapsedYear
 					$elapsedMonth = $ @elapsedMonth
@@ -798,7 +806,7 @@ do (w = @, $ = @jQuery) ->
 					@rules[ruleName] = new Rule ruleName, rule, $elem, @
 			for groupName, rules of groups
 				@rules[groupName] = new RuleGroup groupName, rules, @
-			log $elem
+			# log $elem
 			@form = $form[0]
 			@onShowMessage = onShowMessage or showMessage
 			@onValidateEnd = onValidateEnd or validateEnd
@@ -976,7 +984,7 @@ do (w = @, $ = @jQuery) ->
 				switch key.toLowerCase()
 					when 'require'
 						if label
-							log 'require:', label, values
+							# log 'require:', label, values
 							if Validation.customRules[label]?
 								if groupName
 									groupRequireRule =

@@ -1,4 +1,3 @@
-
 # ルールパラメータ
 
 **name属性**をキーにパラメータ設定したハッシュを`jQuery.fn.validation`の第一引数に渡す。
@@ -140,6 +139,8 @@ var rules = {
 ```
 
 ## ビルトイン関数
+基本的に引数は省略可
+
 - length(`文字列長`)
 - hiragana(`スペース含むか`)
 - katakana(`スペース含むか`)
@@ -151,6 +152,6 @@ var rules = {
 - range(`最小値`,`最大値`,`間隔`,`単位`)
 - mail
 - mail:local, mail:domain
-- date:gengo, date:year, date:month, date:date, date:age(`制限年齢`), date:elapsedYear, date:elapsedMonth
+- date:gengo, date:year(`年齢制限`<sup>†</sup>), date:month, date:date, date:age(`制限年齢`), date:elapsedYear, date:elapsedMonth<br><small>† ageが定義されている場合、ageが優先される。</small>
 - codeNum(`桁数`,`アルファベット含むか`,`ハイフン含むか`)
 
