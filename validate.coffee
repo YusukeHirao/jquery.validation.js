@@ -545,13 +545,13 @@ do (w = @, $ = @jQuery) ->
 						'文字数がオーバーしています'
 			hiragana: new CustomRule
 				cast: (value) ->
-					value.trim().toHiragana()
+					value.trim().toWide().toHiragana()
 				valid: (value, args) ->
 					withSpace = args[0] is 'true'
 					unless value.isOnlyHiragana withSpace then '全角ひらがなで入力してください'
 			katakana: new CustomRule
 				cast: (value) ->
-					value.trim().toKatakana()
+					value.trim().toWide().toKatakana()
 				valid: (value, args) ->
 					withSpace = args[0] is 'true'
 					unless value.isOnlyKatakana withSpace then '全角カタカナで入力してください'
@@ -676,6 +676,20 @@ do (w = @, $ = @jQuery) ->
 						option += '-'
 						error.push 'ハイフン'
 					unless value.isOnly option then "#{error.join('/')}を入力してください"
+			tel: new CustomRule
+				isGroupRule: true
+				cast: (values) ->
+					for key, value of values
+						values[key] = value.toCode()
+					values
+				valid: (values) ->
+					res = ''
+					for key, value of values
+						unless value.isUnsignedInterger()
+							return '半角数字を入力して下さい'
+						res += value
+					unless 10 <= res.length <= 11
+						'電話番号は10か11桁になります'
 			mail: new CustomRule
 				isGroupRule: true
 				cast: (value) ->
@@ -690,13 +704,16 @@ do (w = @, $ = @jQuery) ->
 					# log value
 					if $.isPlainObject value
 						# console.log value.local, value.domain
-						value = value.local.concat '@', value.domain
+						value = value.local.clone().concat '@', value.domain # cloneしないと内部のオブジェクトを汚染する。
+					else
 					unless value.isEMail() then 'メールアドレスの形式が間違っています'
 			date: new CustomRule
 				isGroupRule: true
 				valid: (values, options) ->
 					# log values, options
 					$form = $(@year).parents('form')
+					if (values.gengo and values.gengo.empty()) or (values.year and values.year.empty()) or (values.month and values.month.empty()) or (values.date and values.date.empty())
+						return '必須項目です'
 					gengo = values.gengo?.toString()
 					year = values.year?.toNumber()
 					month = values.month?.toNumber()
@@ -933,10 +950,14 @@ do (w = @, $ = @jQuery) ->
 			if toGroupCheck
 				# グループルールがある場合はここでチェック
 				for groupRuleName, groupRule of @groupRules
-					# log @, groupRuleName, groupRule
+					checkValues = {}
+					for key, groupRuleValue of groupRule
+						checkValues[key] = values[key]
+					# log @
+					# log groupRuleName, checkValues, values
 					customRule = Validation.customRules[groupRuleName]
-					castedValues = customRule.cast elems, values, groupRule, @master
-					# log @, groupRuleName, castedValues, elems
+					castedValues = customRule.cast elems, checkValues, groupRule, @master
+					# log groupRuleName, castedValues, groupRule
 					errorMessage = customRule.valid elems, castedValues, groupRule, @master
 					# log 'GroupError:' + groupRuleName, errorMessage
 					if errorMessage # エラーがあった場合はそこでメッセージを返す
@@ -946,6 +967,11 @@ do (w = @, $ = @jQuery) ->
 					@each ->
 						unless errorMessage # エラーが既に出ていればもうチェックしない
 							errorMessage = @check()
+			# キャストした値の反映
+			for own name, value of castedValues
+				elem = elems[name]
+				unless /select|checkbox|radio/i.test elem.type
+					elem.value = value.toString()
 			return errorMessage
 		validate: ->
 			errorMessage = @check()
@@ -1058,6 +1084,7 @@ do (w = @, $ = @jQuery) ->
 				if errorMessage
 					return errorMessage
 			if @require
+				# log "#{@name} 必須です。@emptyは", @empty()
 				if @empty()
 					return '必須項目です'
 			else

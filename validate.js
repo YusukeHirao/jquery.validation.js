@@ -811,7 +811,7 @@
         }),
         hiragana: new CustomRule({
           cast: function(value) {
-            return value.trim().toHiragana();
+            return value.trim().toWide().toHiragana();
           },
           valid: function(value, args) {
             var withSpace;
@@ -823,7 +823,7 @@
         }),
         katakana: new CustomRule({
           cast: function(value) {
-            return value.trim().toKatakana();
+            return value.trim().toWide().toKatakana();
           },
           valid: function(value, args) {
             var withSpace;
@@ -1020,6 +1020,31 @@
             }
           }
         }),
+        tel: new CustomRule({
+          isGroupRule: true,
+          cast: function(values) {
+            var key, value;
+            for (key in values) {
+              value = values[key];
+              values[key] = value.toCode();
+            }
+            return values;
+          },
+          valid: function(values) {
+            var key, res, value, _ref;
+            res = '';
+            for (key in values) {
+              value = values[key];
+              if (!value.isUnsignedInterger()) {
+                return '半角数字を入力して下さい';
+              }
+              res += value;
+            }
+            if (!((10 <= (_ref = res.length) && _ref <= 11))) {
+              return '電話番号は10か11桁になります';
+            }
+          }
+        }),
         mail: new CustomRule({
           isGroupRule: true,
           cast: function(value) {
@@ -1033,7 +1058,9 @@
           },
           valid: function(value) {
             if ($.isPlainObject(value)) {
-              value = value.local.concat('@', value.domain);
+              value = value.local.clone().concat('@', value.domain);
+            } else {
+
             }
             if (!value.isEMail()) {
               return 'メールアドレスの形式が間違っています';
@@ -1045,6 +1072,9 @@
           valid: function(values, options) {
             var $age, $elapsedMonth, $elapsedYear, $form, age, ageLimits, data, date, elapsedMonth, elapsedYear, fullYear, gengo, isAgeCheck, month, rangeError, thedate, today, year, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
             $form = $(this.year).parents('form');
+            if ((values.gengo && values.gengo.empty()) || (values.year && values.year.empty()) || (values.month && values.month.empty()) || (values.date && values.date.empty())) {
+              return '必須項目です';
+            }
             gengo = (_ref = values.gengo) != null ? _ref.toString() : void 0;
             year = (_ref1 = values.year) != null ? _ref1.toNumber() : void 0;
             month = (_ref2 = values.month) != null ? _ref2.toNumber() : void 0;
@@ -1361,7 +1391,7 @@
       };
 
       RuleGroup.prototype.check = function() {
-        var castedValues, customRule, elems, errorMessage, groupRule, groupRuleName, toGroupCheck, values, _ref;
+        var castedValues, checkValues, customRule, elem, elems, errorMessage, groupRule, groupRuleName, groupRuleValue, key, name, toGroupCheck, value, values, _ref;
         toGroupCheck = false;
         errorMessage = '';
         elems = this.getElements();
@@ -1389,8 +1419,13 @@
           _ref = this.groupRules;
           for (groupRuleName in _ref) {
             groupRule = _ref[groupRuleName];
+            checkValues = {};
+            for (key in groupRule) {
+              groupRuleValue = groupRule[key];
+              checkValues[key] = values[key];
+            }
             customRule = Validation.customRules[groupRuleName];
-            castedValues = customRule.cast(elems, values, groupRule, this.master);
+            castedValues = customRule.cast(elems, checkValues, groupRule, this.master);
             errorMessage = customRule.valid(elems, castedValues, groupRule, this.master);
             if (errorMessage) {
               return errorMessage;
@@ -1402,6 +1437,14 @@
                 return errorMessage = this.check();
               }
             });
+          }
+        }
+        for (name in castedValues) {
+          if (!__hasProp.call(castedValues, name)) continue;
+          value = castedValues[name];
+          elem = elems[name];
+          if (!/select|checkbox|radio/i.test(elem.type)) {
+            elem.value = value.toString();
           }
         }
         return errorMessage;
