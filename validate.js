@@ -1221,22 +1221,22 @@
             elapsedMonth: elapsedMonth
           };
           $form.trigger('validation.date', data);
-          if (isAgeCheck) {
-            $age.val(age);
-            if (age < ageLimits && ageLimitsUp < age) {
-              $age.val('');
-              return "" + ageLimits + " 歳以上 " + ageLimitsUp + " 歳以下 の方しかお申込みできません";
-            } else if (age < ageLimits) {
-              $age.val('');
-              return "" + ageLimits + " 歳以上の方しかお申込みできません";
-            } else if (ageLimitsUp < age) {
-              $age.val('');
-              return "" + ageLimitsUp + " 歳未満 の方しかお申込みできません";
-            }
-          }
           if (age < 0) {
             $age.val('');
             return "未来の日付です";
+          }
+          if (isAgeCheck) {
+            $age.val(age);
+            if (ageLimits !== Infinity && ageLimitsUp !== -Infinity && age < ageLimits && ageLimitsUp < age) {
+              $age.val('');
+              return "" + ageLimits + " 歳以上 " + ageLimitsUp + " 歳以下の方しかお申込みできません";
+            } else if (ageLimits !== Infinity && age < ageLimits) {
+              $age.val('');
+              return "" + ageLimits + " 歳以上の方しかお申込みできません";
+            } else if (ageLimitsUp !== -Infinity && ageLimitsUp < age) {
+              $age.val('');
+              return "" + ageLimitsUp + " 歳以下の方しかお申込みできません";
+            }
           }
           $elapsedYear.val(elapsedYear);
           $elapsedMonth.val(elapsedMonth);

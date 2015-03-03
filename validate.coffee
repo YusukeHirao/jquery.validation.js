@@ -679,13 +679,11 @@ class Validation
 				if match
 					return "「 #{match.join(' ')} 」は入力できません"
 				return
-	#荒川追加
 		hankaku: new CustomRule
 			cast: (value) ->
 				value.trim().toNarrow()
 			valid: ->
 				return
-	#
 		notZero: new CustomRule
 			cast: (value) ->
 				value.trim().toNumber()
@@ -842,20 +840,20 @@ class Validation
 					elapsedMonth: elapsedMonth
 				# log data
 				$form.trigger 'validation.date', data # 計算結果をイベントで受け取れるようにする。
-				if isAgeCheck
-					$age.val age # 年齢を出力
-					if age < ageLimits && ageLimitsUp < age
-						$age.val ''
-						return "#{ageLimits} 歳以上 #{ageLimitsUp} 歳以下 の方しかお申込みできません"
-					else if age < ageLimits
-						$age.val ''
-						return "#{ageLimits} 歳以上の方しかお申込みできません"
-					else if ageLimitsUp < age
-						$age.val ''
-						return "#{ageLimitsUp} 歳未満 の方しかお申込みできません"
 				if age < 0 # 日付が未来の場合
 					$age.val ''
 					return "未来の日付です"
+				if isAgeCheck
+					$age.val age # 年齢を出力
+					if ageLimits isnt Infinity and ageLimitsUp isnt -Infinity and age < ageLimits and ageLimitsUp < age
+						$age.val ''
+						return "#{ageLimits} 歳以上 #{ageLimitsUp} 歳以下の方しかお申込みできません"
+					else if ageLimits isnt Infinity and age < ageLimits
+						$age.val ''
+						return "#{ageLimits} 歳以上の方しかお申込みできません"
+					else if ageLimitsUp isnt -Infinity and ageLimitsUp < age
+						$age.val ''
+						return "#{ageLimitsUp} 歳以下の方しかお申込みできません"
 				$elapsedYear.val elapsedYear
 				$elapsedMonth.val elapsedMonth
 				# エラーなし
