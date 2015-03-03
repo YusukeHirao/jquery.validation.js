@@ -1,32 +1,31 @@
 ###
- * jQuery.validation.js
- * Author: Yusuke Hirao [http://www.yusukehirao.com]
- * Version: 0.1.0.0 RC
- * Github: https://github.com/YusukeHirao/jQuery.validation.js
- * Licensed under the MIT License
- * Require: jQuery v@1.8.0
+* Validation v1.3.1
 ###
 do (w = @, $ = @jQuery) ->
+
 	'use strict'
+
+	w = @
+	$ = @jQuery
 
 	DEBUG_MODE = on
 
 	# 定数
 	SIGN_CHARS = '\\u0020-\\u002F\\u003A-\\u0041\\u005B-\\u0061\\u007B-\\u007E' # [ !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~]
-	DIGIT_CAHRS = '0-9'
+	DIGIT_CHARS = '0-9'
 	ALPHA_CHARS = 'A-Za-z'
 	ALPHANUMERIC_CHARS_WITH_SIGN = '\\u0020-\\u007E' # [ !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~]
-	FULLWIDTH_SING_CHARS = '\\uFF01-\\uFF0F\\uFF1A-\\uFF20\\uFF3B-\\uFF40\\uFF5B-\\uFF5E' # [！＂＃＄％＆＇（）＊＋，－．／：；＜＝＞？＠［＼］＾＿｀｛｜｝～]
+	FULLWIDTH_SING_CHARS = '\\uFF01-\\uFF0F\\uFF1A-\\uFF20\\uFF3B-\\uFF40\\uFF5B-\\uFF5E' # [！＂＃＄％＆＇（）＊＋，－．／：；＜＝＞？＠［＼］＾＿｀｛｜｝〜]
 	FULLWIDTH_DIGIT_CHARS = '\\uFF10-\\uFF19' # [０１２３４５６７８９]
 	FULLWIDTH_ALPHA_CHARS = '\\uFF21-\\uFF3A\\uFF41-\\uFF5A' # [ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ]
-	FULLWIDTH_ALPHANUMERIC_CHARS_WITH_SIGN = '\\uFF01-\\uFF5F' # [！＂＃＄％＆＇（）＊＋，－．／０１２３４５６７８９：；＜＝＞？＠ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ［＼］＾＿｀ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ｛｜｝～]
+	FULLWIDTH_ALPHANUMERIC_CHARS_WITH_SIGN = '\\uFF01-\\uFF5F' # [！＂＃＄％＆＇（）＊＋，－．／０１２３４５６７８９：；＜＝＞？＠ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ［＼］＾＿｀ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ｛｜｝〜]
 	HIRAGANA_CHARS = '\\u3041-\\u3096\\u309D-\\u309F' # [ぁ-ゖゝ-ゟ]
 	KATAKANA_CHARS = '\\u30A1-\\u30FA\\u30FD\\u30FF' # [ァ-ヺヽ-ヿ]
 	KANA_COMMON_CAHRS = '\u3099-\u309C\u30FC' # [゛゜(結合文字含む)ー]
-	JAPANESE_SIGN_CHARS = '\u3000-\u3036\u30FB\\uFF5E' # [　、。〃〄々〆〇〈〉《》「」『』【】〒〓〔〕〖〗〘〙〚〛〜〝〞〟〠〡〢〣〤〥〦〧〨〩〪〭〮〯〫〬〰〱〲〳〴〵〶・～] ※ 波ダッシュ・全角チルダ問題があるため 全角チルダを含めることとする (http://ja.wikipedia.org/wiki/Unicode#.E6.B3.A2.E3.83.80.E3.83.83.E3.82.B7.E3.83.A5.E3.83.BB.E5.85.A8.E8.A7.92.E3.83.81.E3.83.AB.E3.83.80.E5.95.8F.E9.A1.8C)
+	JAPANESE_SIGN_CHARS = '\u3000-\u3036\u30FB\\uFF5E' # [　、。〃〄々〆〇〈〉《》「」『』【】〒〓〔〕〖〗〘〙〚〛〜〝〞〟〠〡〢〣〤〥〦〧〨〩〪〭〮〯〫〬〰〱〲〳〴〵〶・〜] ※ 波ダッシュ・全角チルダ問題があるため 全角チルダを含めることとする (http://ja.wikipedia.org/wiki/Unicode#.E6.B3.A2.E3.83.80.E3.83.83.E3.82.B7.E3.83.A5.E3.83.BB.E5.85.A8.E8.A7.92.E3.83.81.E3.83.AB.E3.83.80.E5.95.8F.E9.A1.8C)
 	NARROW_KATAKANA_CHARS = '\\uFF66-\\uFF9F' # [ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝﾞﾟ]
 	NARROW_JAPANESE_SIGN_CHARS = '\\uFF61-\\uFF65' # [｡｢｣､･]
-	SPACE_LIKE_CHARS = '\\s\\n\\t\\u0009\\u0020\\u00A0\\u2002-\\u200B\\u3000\\uFEFF'
+	SPACE_LIKE_CHARS = '\\s\\n\\t\\u0009\\u0020\\u00A0\\u2002-\\u200B\\u3000\\uFEFF' # スペースとスペースに似た文字
 
 	# 和暦を西暦
 	w2s = (year, gengo) ->
@@ -122,6 +121,24 @@ do (w = @, $ = @jQuery) ->
 		@KANA_WITH_SIGN: @KANA | @JAPANESE_SIGN # ひらがな + カタカナ + 和記号
 		@NARROW_JAPANESE: @NARROW_KATAKANA | @NARROW_JAPANESE_SIGN # 半角カナ
 		@ANK: @ALPHANUMERIC | @NARROW_JAPANESE # ANK(半角英数カナ)
+
+		@patterns:
+			SIGN_CHARS: SIGN_CHARS
+			DIGIT_CHARS: DIGIT_CHARS
+			ALPHA_CHARS: ALPHA_CHARS
+			ALPHANUMERIC_CHARS_WITH_SIGN: ALPHANUMERIC_CHARS_WITH_SIGN
+			FULLWIDTH_SING_CHARS: FULLWIDTH_SING_CHARS
+			FULLWIDTH_DIGIT_CHARS: FULLWIDTH_DIGIT_CHARS
+			FULLWIDTH_ALPHA_CHARS: FULLWIDTH_ALPHA_CHARS
+			FULLWIDTH_ALPHANUMERIC_CHARS_WITH_SIGN: FULLWIDTH_ALPHANUMERIC_CHARS_WITH_SIGN
+			HIRAGANA_CHARS: HIRAGANA_CHARS
+			KATAKANA_CHARS: KATAKANA_CHARS
+			KANA_COMMON_CAHRS: KANA_COMMON_CAHRS
+			JAPANESE_SIGN_CHARS: JAPANESE_SIGN_CHARS
+			NARROW_KATAKANA_CHARS: NARROW_KATAKANA_CHARS
+			NARROW_JAPANESE_SIGN_CHARS: NARROW_JAPANESE_SIGN_CHARS
+			SPACE_LIKE_CHARS: SPACE_LIKE_CHARS
+
 		# ----- ----- ----- ----- ----- # Instance Member
 		_: ''
 		# ----- ----- ----- ----- ----- # Instance Method
@@ -212,7 +229,7 @@ do (w = @, $ = @jQuery) ->
 				if (flag & VString.SIGN) isnt 0
 					chars.push SIGN_CHARS
 				if (flag & VString.DIGIT) isnt 0
-					chars.push DIGIT_CAHRS
+					chars.push DIGIT_CHARS
 				if (flag & VString.ALPHABET) isnt 0
 					chars.push ALPHA_CHARS
 				if (flag & VString.HIRAGANA) isnt 0
@@ -373,7 +390,7 @@ do (w = @, $ = @jQuery) ->
 				.toNarrow()
 				.remove(',')
 		toCode: (digit, inAlpha, inHyphen) ->
-			char = DIGIT_CAHRS
+			char = DIGIT_CHARS
 			char += ALPHA_CHARS if inAlpha
 			char += '-' if inHyphen
 			res = @toNarrow().remove new RegExp "[^#{char}]", 'g'
@@ -398,8 +415,8 @@ do (w = @, $ = @jQuery) ->
 			@isOnly KATAKANA_CHARS, KANA_COMMON_CAHRS, if withSpace then SPACE_LIKE_CHARS else ''
 		isOnlyAlphabet: (withSpace) ->
 			@isOnly ALPHA_CHARS, if withSpace then SPACE_LIKE_CHARS else ''
-		isUnsignedInterger: ->
-			@isOnly DIGIT_CAHRS
+		isUnsignedInteger: ->
+			@isOnly DIGIT_CHARS
 		isEMail: ->
 			# 参考: http://ja.wikipedia.org/wiki/%E3%83%A1%E3%83%BC%E3%83%AB%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9
 			# メールアドレスの文字列長は合計256文字まで
@@ -564,7 +581,8 @@ do (w = @, $ = @jQuery) ->
 				cast: (value) ->
 					value.trim().toNumber()
 				valid: (value) ->
-					unless value.isUnsignedInterger() then '半角数字を入力して下さい'
+					if value.trim().toNumber() < 0 then return '0 以上を入力して下さい'
+					unless value.isUnsignedInteger() then '半角数字を入力して下さい'
 			char: new CustomRule
 				cast: (value, query = []) ->
 					value = value.trim()
@@ -638,6 +656,13 @@ do (w = @, $ = @jQuery) ->
 					value.trim().toWide()
 				valid: ->
 					return
+		#荒川追加
+			hankaku: new CustomRule
+				cast: (value) ->
+					value.trim().toNarrow()
+				valid: ->
+					return
+		#
 			notZero: new CustomRule
 				cast: (value) ->
 					value.trim().toNumber()
@@ -658,16 +683,18 @@ do (w = @, $ = @jQuery) ->
 						return "#{step}#{unit} 単位で入力してください"
 			codeNum: new CustomRule
 				cast: (value, args) ->
-					# log value, args
 					digit = parseInt(args[0], 10)
-					inAlpha = args[1] is 'true' or args[1] is true
-					inHyphen = args[2] is 'true' or args[2] is true
+					inAlpha = args[1] is 'true' or args[1] is true or false
+					inHyphen = args[2] is 'true' or args[2] is true or false
+					doesntCast = args[3] is 'true' or args[3] is true or false
+					if doesntCast
+						return value
 					value.toCode digit, inAlpha, inHyphen
 				valid: (value, args) ->
-					digit = parseInt(args[0], 10) or 1
-					inAlpha = args[1] is 'true' or args[1] is true
-					inHyphen = args[2] is 'true' or args[2] is true
-					option = DIGIT_CAHRS
+					digit = parseInt(args[0], 10)
+					inAlpha = args[1] is 'true' or args[1] is true or false
+					inHyphen = args[2] is 'true' or args[2] is true or false
+					option = DIGIT_CHARS
 					error = ['半角数字']
 					if inAlpha
 						option += ALPHA_CHARS
@@ -675,17 +702,27 @@ do (w = @, $ = @jQuery) ->
 					if inHyphen
 						option += '-'
 						error.push 'ハイフン'
-					unless value.isOnly option then "#{error.join('/')}を入力してください"
+					unless value.isOnly option
+						return "#{error.join('/')}を入力してください"
+					unless digit
+						return
+					if value.getLength() < digit
+						return '桁数が足りません'
+					else if value.getLength() > digit
+						return '桁数がオーバーしています'
 			tel: new CustomRule
 				isGroupRule: true
 				cast: (values) ->
 					for key, value of values
+					#荒川追加
+						values[key] = value.toNarrow()
+					#
 						values[key] = value.toCode()
 					values
 				valid: (values) ->
 					res = ''
 					for key, value of values
-						unless value.isUnsignedInterger()
+						unless value.isUnsignedInteger()
 							return '半角数字を入力して下さい'
 						res += value
 					unless 10 <= res.length <= 11
@@ -719,12 +756,13 @@ do (w = @, $ = @jQuery) ->
 					month = values.month?.toNumber()
 					date = values.date?.toNumber()
 					ageLimits = options.age?[0] or options.year?[0] or Infinity
-					isAgeCheck = isFinite ageLimits
+					ageLimitsUp = options.age?[1] or options.year?[1] or -Infinity
+					isAgeCheck = isFinite(ageLimits) or isFinite(ageLimitsUp)
 					$age = $ @age
 					$elapsedYear = $ @elapsedYear
 					$elapsedMonth = $ @elapsedMonth
+					# log year, month, date, fullYear, isAgeCheck, ageLimits, ageLimitsUp
 					if gengo
-						# log gengo, year, month, date, fullYear, isAgeCheck, ageLimits
 						if isNaN month # 年だけパターン
 							if rangeError = checkGengo gengo, year
 								if rangeError.end?
@@ -783,9 +821,15 @@ do (w = @, $ = @jQuery) ->
 					$form.trigger 'validation.date', data # 計算結果をイベントで受け取れるようにする。
 					if isAgeCheck
 						$age.val age # 年齢を出力
-						if ageLimits and age < ageLimits
+						if age < ageLimits && ageLimitsUp < age
+							$age.val ''
+							return "#{ageLimits} 歳以上 #{ageLimitsUp} 歳以下 の方しかお申込みできません"
+						else if age < ageLimits
 							$age.val ''
 							return "#{ageLimits} 歳以上の方しかお申込みできません"
+						else if ageLimitsUp < age
+							$age.val ''
+							return "#{ageLimitsUp} 歳未満 の方しかお申込みできません"
 					if age < 0 # 日付が未来の場合
 						$age.val ''
 						return "未来の日付です"
@@ -811,7 +855,7 @@ do (w = @, $ = @jQuery) ->
 				elem = $elem[0]
 				type = elem.type
 				switch type.toLowerCase()
-					when 'hidden', 'submit', 'button', 'image' # これらがtypeの要素は登録しない
+					when 'submit', 'button', 'image' # これらがtypeの要素は登録しない
 						continue
 				groupMatch = rule.match /group:([^\s]+)(?:\s+|$)/i
 				if groupMatch
@@ -825,8 +869,8 @@ do (w = @, $ = @jQuery) ->
 				@rules[groupName] = new RuleGroup groupName, rules, @
 			# log $elem
 			@form = $form[0]
-			@onShowMessage = onShowMessage or showMessage
-			@onValidateEnd = onValidateEnd or validateEnd
+			@onShowMessage = onShowMessage
+			@onValidateEnd = onValidateEnd
 		getRule: (name) ->
 			for ruleName, rule of @rules
 				# log ruleName, rule
@@ -851,7 +895,7 @@ do (w = @, $ = @jQuery) ->
 			messagesArray = []
 			for ruleName, rule of @rules
 				message = rule.validate()
-				log(ruleName, message) if @debug
+				log(ruleName, "(#{rule.putValue()})=>(#{rule.putCastedValue()})", message) if @debug
 				messages[ruleName] = message
 				messagesArray.push message
 				if message
@@ -867,12 +911,16 @@ do (w = @, $ = @jQuery) ->
 		groupRules: null
 		requireRule: null
 		master: null
+		values: null
+		castedValues: null
 		# ----- ----- ----- ----- ----- # Instance Method
 		constructor: (groupName, rules, master) ->
 			# log rules
 			@name = groupName
 			@$elem = $()
 			@groupRules = {}
+			@values = {}
+			@castedValues = {}
 			@master = master
 			for rule, i in rules
 				name = rule.name
@@ -926,18 +974,30 @@ do (w = @, $ = @jQuery) ->
 					res[@name] = @$elem[0]
 				return
 			return res
+		putValue: ->
+			res = []
+			for n, value of @values
+				res.push value
+			return res.join(',')
+		putCastedValue: ->
+			res = []
+			for n, value of @castedValues
+				res.push value
+			return res.join(',')
 		check: ->
+			name = @name
 			toGroupCheck = false
 			errorMessage = ''
 			elems = @getElements()
-			values = @getValues()
+			@values = @getValues()
 			# まずグループ専用の必須チェックがあればかける
 			if @requireRule?
 				customRule = Validation.customRules[@requireRule.name]
-				castedValues = customRule.cast elems, values, @requireRule.params, @master
-				errorMessage = customRule.valid elems, castedValues, @requireRule.params, @master
+				@castedValues = customRule.cast elems, @values, @requireRule.params, @master
+				errorMessage = customRule.valid elems, @castedValues, @requireRule.params, @master
 				if errorMessage # エラーがあった場合はそこでメッセージを返す
 					return errorMessage
+				@require = off # 必須条件がクリアされたことになるので必須ではなくなる
 			# 次に個別ルールの必須&空欄チェックを行う
 			@each ->
 				unless toGroupCheck # グループルールチェックへのフラグたったらもうチェックしない
@@ -947,31 +1007,36 @@ do (w = @, $ = @jQuery) ->
 					unless @empty()
 						toGroupCheck = true
 						return
+			opt =
+				isCasted: no
 			if toGroupCheck
 				# グループルールがある場合はここでチェック
 				for groupRuleName, groupRule of @groupRules
 					checkValues = {}
 					for key, groupRuleValue of groupRule
-						checkValues[key] = values[key]
+						checkValues[key] = @values[key]
 					# log @
-					# log groupRuleName, checkValues, values
+					# log groupRuleName, checkValues, @values
 					customRule = Validation.customRules[groupRuleName]
-					castedValues = customRule.cast elems, checkValues, groupRule, @master
-					# log groupRuleName, castedValues, groupRule
-					errorMessage = customRule.valid elems, castedValues, groupRule, @master
+					@castedValues = customRule.cast elems, checkValues, groupRule, @master
+					# log groupRuleName, @castedValues, groupRule
+					errorMessage = customRule.valid elems, @castedValues, groupRule, @master
 					# log 'GroupError:' + groupRuleName, errorMessage
 					if errorMessage # エラーがあった場合はそこでメッセージを返す
 						return errorMessage
+				# console.log 'THE ' + name + '::ぐるーぷるーる' + errorMessage, @[0].rules.length
 				# グループルールのエラーがなければ個別チェックをかける
 				unless errorMessage
 					@each ->
+						# console.log 'THE ' + name + '/' + @name + '::こべつるーる(' + @rules.join('&') + ')' + errorMessage
 						unless errorMessage # エラーが既に出ていればもうチェックしない
-							errorMessage = @check()
+							errorMessage = @check(opt)
 			# キャストした値の反映
-			for own name, value of castedValues
-				elem = elems[name]
-				unless /select|checkbox|radio/i.test elem.type
-					elem.value = value.toString()
+			if not opt.isCasted
+				for own name, value of @castedValues
+					elem = elems[name]
+					unless /select|checkbox|radio/i.test elem.type
+						elem.value = value.toString()
 			return errorMessage
 		validate: ->
 			errorMessage = @check()
@@ -992,6 +1057,8 @@ do (w = @, $ = @jQuery) ->
 		callback: []
 		rules: []
 		ignore: []
+		value: ''
+		castedValue: ''
 		# ----- ----- ----- ----- ----- # Instance Method
 		constructor: (ruleName, rule, $elem, master, groupName) ->
 			rulesQuerySplit = rule.split /\s+/
@@ -1039,6 +1106,9 @@ do (w = @, $ = @jQuery) ->
 								label: label
 								params: values
 								method: method
+								# デバッグ用
+								toString: ->
+									"Rule::#{@name}(#{@params.join(',')})"
 						else # 指定されたルールのメソッドが定義されてない場合、警告する
 							warn "CustomRule #{key} is not defined."
 			@master = master
@@ -1066,23 +1136,28 @@ do (w = @, $ = @jQuery) ->
 					return @$elem.filter(':checked').val() or null
 				else
 					return value
+		putValue: ->
+			return String @value
+		putCastedValue: ->
+			return String @castedValue
 		empty: ->
 			value = @getValue()
 			return !value
 		message: (passed, message) ->
 			@master.onShowMessage.call @$elem[0], passed, message
 			return message
-		check: ->
-			value = @getValue()
-			castedValue = value
+		check: (opt) ->
+			@value = @getValue()
+			@castedValue = @value
 			elem = @$elem[0]
 			if @requireRule?
 				# console.log @requireRule.params.join()
 				method = Validation.customRules[@requireRule.name]
-				castedValue = method.cast elem, castedValue, @requireRule.params, @master
-				errorMessage = method.valid elem, castedValue, @requireRule.params, @master
+				@castedValue = method.cast elem, @castedValue, @requireRule.params, @master
+				errorMessage = method.valid elem, @castedValue, @requireRule.params, @master
 				if errorMessage
 					return errorMessage
+				@require = off # 必須条件がクリアされたことになるので必須ではなくなる
 			if @require
 				# log "#{@name} 必須です。@emptyは", @empty()
 				if @empty()
@@ -1098,25 +1173,29 @@ do (w = @, $ = @jQuery) ->
 					if method.isGroupRule and @groupName
 						# log 'toGroup'
 						continue # グループルールの場合はここで個別チェックはせず、グループ単位で行う
-					castedValue = method.cast elem, castedValue, rule.params, @master
-					errorMessage = method.valid elem, castedValue, rule.params, @master
-					# log 'ValidError:' + rule.name, errorMessage
+					@castedValue = method.cast elem, @castedValue, rule.params, @master
+					errorMessage = method.valid elem, @castedValue, rule.params, @master
+					# log 'ValidError:' + rule, @value, @castedValue, @castedValue.toString(), errorMessage
 					if errorMessage
 						return errorMessage
+			# log 'Result:' + rule, @castedValue.toString() + ' is valid!!!'
 			# キャストした値の反映
 			unless /select|checkbox|radio/i.test @type # typeが左のものに該当しなければ反映
-				@$elem.val castedValue
+				@$elem.val @castedValue.toString()
+				# @$elem[0].value = @castedValue.toString()
+				# console.log "#{@name}=>" + @castedValue.toString(), @$elem[0], @$elem[0].value
+				opt.isCasted = yes
 			return ''
 		validate: (isGroupCheck) ->
 			if isGroupCheck and @groupName
 				# log @master, @groupName
 				return @master.rules[@groupName].validate()
-			errorMessage = @check()
+			errorMessage = @check({})
 			for callback in @callback
 				@master.rules[callback]?.validate()
 			return @message !errorMessage, errorMessage
 
-	$.fn.validation = (rulesOrMethod, customRules, onShowMessage, onValidateEnd) ->
+	$.fn.validation = (rulesOrMethod, customRules, options) ->
 		# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- # Variables #
 		$elem = @.eq 0
 		elem = $elem[0]
@@ -1124,6 +1203,11 @@ do (w = @, $ = @jQuery) ->
 		# Form要素出ない場合はなにもしない
 		unless elem then return @
 		unless elem.nodeName.toLowerCase() is 'form' then return @
+		options = $.extend
+			when: Validation.when or 'each'
+			onShowMessage: Validation.showMessage
+			onValidateEnd: Validation.validateEnd
+		, options
 		# インスタンス化チェック
 		rules = $elem.data 'validation'
 		# メソッド実行
@@ -1149,7 +1233,7 @@ do (w = @, $ = @jQuery) ->
 					else
 						Validation.customRules[customRuleName] = new CustomRule customRuleOption
 			# ルールインスタンスを生成
-			rules = new RuleMaster @, rulesOrMethod, onShowMessage, onValidateEnd
+			rules = new RuleMaster @, rulesOrMethod, options.onShowMessage, options.onValidateEnd
 			rules.debug = DEBUG_MODE # デバッグモード
 			# インスタンス化フラグ
 			$elem.data 'validation', rules
@@ -1158,27 +1242,31 @@ do (w = @, $ = @jQuery) ->
 				if data?.noValidate
 					return on
 				return rules.validate()
-			$elem.on 'blur change', 'input, select, textarea', ->
-				$this = $ @
-				name = @name
-				type = @type
-				# log arguments[0].type, name, $this
-				switch type.toLowerCase()
-					when 'hidden', 'submit', 'button', 'image' # これらがtypeの要素は無視
-					else # 上記以外はバリデーション実行
-						rule = rules.getRule name
-						# log name, rules
-						rule.validate true
-				# falseを返す意味はない。
-				# falseを返していまうとIE8, IE9-10互換モード等でラジオボタン・チェックボックスがチェックできなくなる。
-				return true
+			# リアルタイムバリデーション
+			if options.when.toString().toLowerCase() is 'each'
+				$elem.on 'blur change', 'input, select, textarea', (e, params) ->
+					if params? and params.fromTrigger
+						return true
+					$this = $ @
+					name = @name
+					type = @type
+					# log arguments[0].type, name, $this
+					switch type.toLowerCase()
+						when 'hidden', 'submit', 'button', 'image' # これらがtypeの要素は無視
+						else # 上記以外はバリデーション実行
+							rule = rules.getRule name
+							# log name, rules
+							rule.validate true
+					# falseを返す意味はない。
+					# falseを返していまうとIE8, IE9-10互換モード等でラジオボタン・チェックボックスがチェックできなくなる。
+					return true
 			# Debug
 			log rules if DEBUG_MODE
 		return @
 
 	# 暫定のデフォルト表示処理
 	# その都度いつでもオーバーライドできる
-	showMessage = (passed, message) ->
+	Validation.showMessage = (passed, message) ->
 		$this = $ @
 		$tr = $this.parents('tr')
 		$td = $tr.find('td.check')
@@ -1196,7 +1284,7 @@ do (w = @, $ = @jQuery) ->
 
 	# 暫定のデフォルトチェック後処理
 	# その都度いつでもオーバーライドできる
-	validateEnd = (passed, messages, messagesArray) ->
+	Validation.validateEnd = (passed, messages, messagesArray) ->
 		# log @, passed, messages, messagesArray
 		unless passed
 			top = $(@).find('.error').eq(0).offset().top
