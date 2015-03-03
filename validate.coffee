@@ -1,5 +1,5 @@
 ###
-* Validation v1.4.0-beta
+* Validation v1.4.0
 ###
 'use strict'
 
